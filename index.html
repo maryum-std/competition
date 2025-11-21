@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Central Data Archive | System Records</title>
+    <style>
+        :root {
+            --bg-color: #0d1117;
+            --panel-color: #161b22;
+            --text-main: #c9d1d9;
+            --text-dim: #8b949e;
+            --accent-public: #238636; /* Green */
+            --accent-private: #da3633; /* Red */
+            --accent-sql: #a5d6ff; /* Blue for SQL */
+            --border: #30363d;
+            --font-mono: 'Courier New', Courier, monospace;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            background-image: radial-gradient(rgba(0,0,0,0.3) 2px, transparent 2px);
+            background-size: 20px 20px;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 1100px;
+            position: relative;
+        }
+
+        /* Header Section */
+        header {
+            margin-bottom: 20px;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+        }
+
+        h1 {
+            font-size: 1.8rem;
+            margin: 0;
+            text-transform: uppercase;
+            letter-spacing: 3px;
+            color: #fff;
+        }
+
+        /* FAKE SQL TERMINAL */
+        .sql-terminal {
+            background: #000;
+            border: 1px solid #30363d;
+            padding: 15px;
+            font-family: var(--font-mono);
+            font-size: 0.85rem;
+            margin-bottom: 20px;
+            border-radius: 6px;
+            color: #79c0ff;
+        }
+        .sql-keyword { color: #ff7b72; } /* Red/Pink for keywords */
+        .sql-string { color: #a5d6ff; } /* Blue for text */
+
+        /* Tabs */
+        .tabs {
+            display: flex;
+            gap: 2px;
+        }
+
+        .tab-btn {
+            background: #0f1115;
+            border: 1px solid var(--border);
+            border-bottom: none;
+            color: var(--text-dim);
+            padding: 12px 24px;
+            cursor: pointer;
+            font-family: var(--font-mono);
+            font-size: 0.9rem;
+            border-radius: 6px 6px 0 0;
+        }
+
+        .tab-btn.active {
+            border-top: 2px solid var(--accent-public);
+            color: var(--text-main);
+            background: var(--panel-color);
+            font-weight: bold;
+        }
+
+        .tab-btn.active-private {
+            border-top: 2px solid var(--accent-private);
+        }
+
+        /* Log Tables */
+        .log-container {
+            background: var(--panel-color);
+            border: 1px solid var(--border);
+            border-radius: 0 6px 6px 6px;
+            display: none;
+            animation: fadeIn 0.4s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(5px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .log-container.active { display: block; }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-family: var(--font-mono);
+            font-size: 0.85rem;
+        }
+
+        thead {
+            background: #21262d;
+            color: var(--text-dim);
+            text-align: left;
+            text-transform: uppercase;
+            font-size: 0.75rem;
+        }
+
+        th, td {
+            padding: 16px;
+            border-bottom: 1px solid var(--border);
+            vertical-align: top;
+        }
+
+        /* Dept Tags */
+        .dept-tag {
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-size: 0.7rem;
+            font-weight: bold;
+            display: inline-block;
+        }
+        
+        .tag-arch { background: #8957e5; color: white; } /* Purple */
+        .tag-rro { background: #1f6feb; color: white; } /* Blue */
+        .tag-aed { background: #da3633; color: white; } /* Red */
+        .tag-iibo { background: #fff; color: #000; } /* White */
+        .tag-cisd { background: #d29922; color: #000; } /* Gold */
+        .tag-padl { background: #30363d; color: #8b949e; border: 1px solid #6e7681; } /* Grey */
+
+        /* LOCK SCREEN */
+        .locked-view {
+            position: relative;
+            min-height: 400px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .blur-content {
+            filter: blur(10px);
+            opacity: 0.3;
+            user-select: none;
+            pointer-events: none;
+        }
+
+        .lock-interface {
+            position: absolute;
+            z-index: 10;
+            background: rgba(13, 17, 23, 0.9);
+            border: 1px solid var(--accent-private);
+            padding: 40px;
+            text-align: center;
+            border-radius: 12px;
+            backdrop-filter: blur(5px);
+        }
+
+        .puzzle-btn {
+            background: var(--accent-private);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            font-family: var(--font-mono);
+            cursor: pointer;
+            font-weight: bold;
+            margin-top: 15px;
+        }
+
+        /* PUZZLE MODAL */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.9);
+            justify-content: center;
+            align-items: center;
+            z-index: 100;
+        }
+
+        .modal-content {
+            background: var(--panel-color);
+            border: 1px solid var(--border);
+            padding: 40px;
+            max-width: 500px;
+            font-family: var(--font-mono);
+        }
+
+        input[type="text"] {
+            width: 100%;
+            background: #0d1117;
+            border: 1px solid var(--border);
+            color: white;
+            padding: 10px;
+            margin-top: 10px;
+        }
+
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <header>
+            <h1>System_Records_Archive</h1>
+            <div style="text-align: right; font-family: var(--font-mono); font-size: 0.8rem; color: var(--text-dim);">
+                SYSTEM DATE: DEC 28 2025<br>
+                STATUS: PRE-INCIDENT
+            </div>
+        </header>
+
+        <div class="sql-terminal">
+            <span style="color: #238636;">user@admin:~$</span> psql -d archives<br>
+            archives=> <span class="sql-keyword">SELECT</span> timestamp, sender, receiver, message <br>
+            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="sql-keyword">FROM</span> daily_logs <br>
+            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="sql-keyword">WHERE</span> date = <span class="sql-string">'2025-12-28'</span> <span class="sql-keyword">ORDER BY</span> timestamp ASC;
+        </div>
+
+        <div class="tabs">
+            <button class="tab-btn active" onclick="switchTab('public')">PUBLIC CHANNEL</button>
+            <button class="tab-btn" id="private-tab-btn" onclick="switchTab('private')">ENCRYPTED CHANNEL [LOCKED]</button>
+        </div>
+
+        <div id="public-logs" class="log-container active">
+            <table>
+                <thead>
+                    <tr>
+                        <th style="width: 120px;">TIME</th>
+                        <th style="width: 100px;">SENDER</th>
+                        <th style="width: 100px;">RECEIVER</th>
+                        <th>MESSAGE CONTENT</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>09:12</td>
+                        <td><span class="dept-tag tag-arch">ARCH</span></td>
+                        <td><span class="dept-tag tag-rro">RRO</span></td>
+                        <td>Archival request for Reconstruction Test #2204. Awaiting metadata.</td>
+                    </tr>
+                    <tr>
+                        <td>11:47</td>
+                        <td><span class="dept-tag tag-rro">RRO</span></td>
+                        <td><span class="dept-tag tag-aed">AED</span></td>
+                        <td>Notification: Minor pulse spill detected in Zone C-11.</td>
+                    </tr>
+                    <tr>
+                        <td>13:03</td>
+                        <td><span class="dept-tag tag-iibo">IIBO</span></td>
+                        <td><span class="dept-tag tag-cisd">CISD</span></td>
+                        <td>Request routine log verification for Gateway 64A.</td>
+                    </tr>
+                    <tr>
+                        <td>16:55</td>
+                        <td><span class="dept-tag tag-aed">AED</span></td>
+                        <td><span class="dept-tag tag-arch">ARCH</span></td>
+                        <td>Cleanup records for Incident 44-B submitted.</td>
+                    </tr>
+                    <tr>
+                        <td>19:12</td>
+                        <td><span class="dept-tag tag-arch">ARCH</span></td>
+                        <td><span class="dept-tag tag-padl">PADL</span></td>
+                        <td>Request clarification for anomaly tags in Run 558.</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div id="private-logs" class="log-container">
+            <div class="locked-view" id="lock-screen">
+                
+                <div class="blur-content">
+                    <table>
+                        <thead><tr><th>TIME</th><th>SENDER</th><th>RECEIVER</th><th>MESSAGE</th></tr></thead>
+                        <tbody>
+                            <tr><td>09:12</td><td>ARCH</td><td>RRO</td><td>████████████████████</td></tr>
+                            <tr><td>11:47</td><td>RRO</td><td>AED</td><td>Residual paradox trace found.</td></tr>
+                            <tr><td>13:03</td><td>CISD</td><td>IIBO</td><td>DENIED. PRIORITY HIGH.</td></tr>
+                            <tr><td>14:32</td><td>PADL</td><td>SAMUEL</td><td>████████████████████</td></tr>
+                            <tr><td>16:55</td><td>AED</td><td>ARCH</td><td>Erase signatures.</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="lock-interface">
+                    <span style="font-size: 3rem;">🔒</span>
+                    <h3>ENCRYPTED PARTITION</h3>
+                    <p style="color: #8b949e; font-size: 0.9rem;">Supervisor clearance required.</p>
+                    <button class="puzzle-btn" onclick="openPuzzle()">DECRYPT LOGS</button>
+                </div>
+            </div>
+
+            <div id="unlocked-content" style="display: none;">
+                <div style="background: #2a1212; padding: 10px; color: #ff7b72; text-align: center; font-family: var(--font-mono); border-bottom: 1px solid #da3633;">
+                    ⚠ DECRYPTED: VIEWING RAW INTERNAL COMMS
+                </div>
+                <table>
+                    <thead>
+                        <tr>
+                            <th style="width: 120px;">TIME</th>
+                            <th style="width: 100px;">SENDER</th>
+                            <th style="width: 100px;">RECEIVER</th>
+                            <th>DECRYPTED MESSAGE</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td style="color: var(--text-dim);">09:12</td>
+                            <td><span class="dept-tag tag-arch">ARCH</span></td>
+                            <td><span class="dept-tag tag-rro">RRO</span></td>
+                            <td style="color: #a5d6ff;">"Seal Test #2204. Do NOT cross-index with IIBO."</td>
+                        </tr>
+                        <tr>
+                            <td style="color: var(--text-dim);">11:47</td>
+                            <td><span class="dept-tag tag-rro">RRO</span></td>
+                            <td><span class="dept-tag tag-aed">AED</span></td>
+                            <td style="color: #ff7b72;">"Residual paradox trace. Need quiet cleanup."</td>
+                        </tr>
+                        <tr>
+                            <td style="color: var(--text-dim);">13:03</td>
+                            <td><span class="dept-tag tag-cisd">CISD</span></td>
+                            <td><span class="dept-tag tag-iibo">IIBO</span></td>
+                            <td style="font-weight: bold;">"Denied. Containment priority: high."</td>
+                        </tr>
+                        <tr>
+                            <td style="color: var(--text-dim);">14:32</td>
+                            <td><span class="dept-tag tag-padl">PADL</span></td>
+                            <td><span class="dept-tag tag-cisd">SAMUEL</span></td>
+                            <td style="color: #d29922;">"Probability variance rising in Eastern Branch Logs."</td>
+                        </tr>
+                        <tr>
+                            <td style="color: var(--text-dim);">16:55</td>
+                            <td><span class="dept-tag tag-aed">AED</span></td>
+                            <td><span class="dept-tag tag-arch">ARCH</span></td>
+                            <td style="color: #da3633;">"Erase secondary signatures. Routine."</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal" id="puzzle-modal">
+        <div class="modal-content">
+            <h2>Verify Credentials</h2>
+            <p style="color: #d29922; font-style: italic;">"I have cities, but no houses. I have mountains, but no trees. What am I?"</p>
+            <input type="text" id="puzzle-answer" placeholder="Enter Answer...">
+            <p id="error-msg" style="color: #da3633; display: none; margin-top: 10px;">ACCESS DENIED</p>
+            <div style="margin-top: 20px; text-align: right;">
+                <button onclick="checkAnswer()" style="background: #238636; color: white; border: none; padding: 10px 20px; cursor: pointer;">LOGIN</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function switchTab(type) {
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active', 'active-private'));
+            document.querySelectorAll('.log-container').forEach(c => c.classList.remove('active'));
+            
+            if (type === 'public') {
+                document.querySelector('.tab-btn:first-child').classList.add('active');
+                document.getElementById('public-logs').classList.add('active');
+            } else {
+                const btn = document.getElementById('private-tab-btn');
+                btn.classList.add('active', 'active-private');
+                document.getElementById('private-logs').classList.add('active');
+            }
+        }
+
+        const modal = document.getElementById('puzzle-modal');
+        const PUZZLE_ANSWER = "MAP";
+
+        function openPuzzle() { modal.style.display = 'flex'; document.getElementById('puzzle-answer').focus(); }
+        function checkAnswer() {
+            if (document.getElementById('puzzle-answer').value.toUpperCase().trim() === PUZZLE_ANSWER) {
+                modal.style.display = 'none';
+                document.getElementById('lock-screen').style.display = 'none';
+                document.getElementById('unlocked-content').style.display = 'block';
+                document.getElementById('private-tab-btn').innerText = "ENCRYPTED CHANNEL [OPEN]";
+            } else {
+                document.getElementById('error-msg').style.display = 'block';
+            }
+        }
+        window.onclick = e => { if(e.target == modal) modal.style.display = 'none'; }
+    </script>
+</body>
+</html>
