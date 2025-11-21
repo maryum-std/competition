@@ -12,7 +12,6 @@
             --text-dim: #8b949e;
             --accent-public: #238636; /* Green */
             --accent-private: #da3633; /* Red */
-            --accent-sql: #a5d6ff; /* Blue for SQL */
             --border: #30363d;
             --font-mono: 'Courier New', Courier, monospace;
         }
@@ -52,20 +51,6 @@
             letter-spacing: 3px;
             color: #fff;
         }
-
-        /* FAKE SQL TERMINAL */
-        .sql-terminal {
-            background: #000;
-            border: 1px solid #30363d;
-            padding: 15px;
-            font-family: var(--font-mono);
-            font-size: 0.85rem;
-            margin-bottom: 20px;
-            border-radius: 6px;
-            color: #79c0ff;
-        }
-        .sql-keyword { color: #ff7b72; } /* Red/Pink for keywords */
-        .sql-string { color: #a5d6ff; } /* Blue for text */
 
         /* Tabs */
         .tabs {
@@ -228,12 +213,6 @@
             </div>
         </header>
 
-        <div class="sql-terminal">
-            <span style="color: #238636;">user@admin:~$</span> psql -d archives<br>
-            archives=> <span class="sql-keyword">SELECT</span> timestamp, sender, receiver, message <br>
-            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="sql-keyword">FROM</span> daily_logs <br>
-            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="sql-keyword">WHERE</span> date = <span class="sql-string">'2025-12-28'</span> <span class="sql-keyword">ORDER BY</span> timestamp ASC;
-        </div>
 
         <div class="tabs">
             <button class="tab-btn active" onclick="switchTab('public')">PUBLIC CHANNEL</button>
